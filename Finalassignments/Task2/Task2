@@ -1,0 +1,116 @@
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+
+def read_file(filename):
+    demand = []
+    fixcost = []
+    productioncost = []
+    holdingcost = []
+    with open(filename, 'r') as file:
+        n = int(file.readline())
+        
+        for line in range(n):
+            d,f,p,h = map(int, file.readline().split())
+            demand.append(d)
+            fixcost.append(f)
+            productioncost.append(p)
+            holdingcost.append(h)
+    return n,demand,fixcost,productioncost,holdingcost
+
+#Uncomment the line below to read the file for the given problem
+#n,demand,fixcost,productioncost,holdingcost=read_file(r'Finalassignments\Task2\task2_input')
+n,demand,fixcost,productioncost,holdingcost=read_file(r'Finalassignments\Task2\task2_n=6')
+
+
+
+#Calculate the cost for all periods
+Cost=[]
+for t in range(n):
+    cost=productioncost[t]+sum(holdingcost[t:n])
+    Cost.append(cost)
+print(Cost)
+#Calculate the demand for all periods
+Demand=[]
+Finddemand={}
+for t in range(n):
+    for i in range(t, n):
+        demand_t = sum(demand[t:i+1])
+        Demand.append(demand_t)
+        Finddemand[(t,i+1)]=demand_t
+print("Demand:",Demand)
+
+
+print(fixcost)
+def construct_graph(n, demand, setup_cost, Cost):
+    # Skapa en graf som en dictionary där varje nod i har en lista av bågar (i, j, cost)
+    G=nx.DiGraph()
+    G.add_nodes_from(range(0,n+1))
+    ArcCost=[]
+    counter=0
+    for i in range(n):
+        for j in range(i+1, n+1):
+            
+        # Calculate the total demand from period i+1 to period j
+        #Demand contains demand for each arc
+        # Calculate the cost for the arc (i, j)
+            print("Setup cost: ", setup_cost[i],"Cost: ", Cost[i], "Demand: ", Demand[j-1])
+            arc_cost = setup_cost[i] + Cost[i] * Demand[counter]
+            G.add_edge(i, j, cost=arc_cost)
+            ArcCost.append(arc_cost)
+            counter=counter+1
+    return G        # Konstruera bågarna mellan noder i och j
+
+G = construct_graph(n, demand, fixcost, Cost)
+
+#print("Test123",G.edges.data('cost'))
+#print(ArcCost)
+#print(G)
+#print(edge_labels)
+#nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
+def bellman_ford(G, source):
+    
+    #Set the distance to all nodes to infinity
+    distances = {node: float('inf') for node in G.nodes}
+    #Set the predecessor of all nodes to None
+    predecessors = {node: None for node in G.nodes}
+    
+    distances[source] = 0
+
+
+    for _ in range(len(G.nodes) - 1):
+        #For each edge from u to v with weight
+        for u, v, cost in G.edges.data('cost'):
+            #Check if distance from source to u + weight is less than the known distance to v
+            if distances[u] + cost < distances[v]:
+                distances[v] = distances[u] + cost
+                predecessors[v] = u
+
+    #Check for negative cycles
+    for u, v, cost in G.edges.data('cost'):
+        if distances[u] + cost < distances[v]:
+            raise ValueError("Graph contains negative cycle")
+
+    return distances, predecessors
+
+distances, predecessors = bellman_ford(G, 0)
+
+min_cost=distances[len(distances)-1]
+
+
+path=[]
+node=len(distances)-1
+path.append(node)
+while(predecessors[node]!=None):
+    path.append(predecessors[node])
+    node=predecessors[node]
+path.reverse()
+
+
+
+print("\nPath:",path)
+print("Minimum cost:",min_cost)
+for i in range(len(path)-1):
+    print(f"Production {Finddemand[(path[i],path[i+1])]} in node: {path[i]} ")
+

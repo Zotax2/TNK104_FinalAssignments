@@ -1,0 +1,89 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+import queue as queue
+import itertools as it
+
+def read_file(filename):
+    
+    with open(filename, 'r') as file:
+        m,n = map(int, file.readline().split())
+        costmatrix=[]
+        capacitiesREQ=[]
+        for line in range(m):
+            cost = list(map(int, file.readline().split()))
+            costmatrix.append(cost)
+        for line in range (m):
+            capacity=list(map(int, file.readline().split()))
+            capacitiesREQ.append(capacity)
+        machinecapacities=list(map(int, file.readline().split()))
+    return m,n,costmatrix,capacitiesREQ,machinecapacities
+
+m,n,costmatrix,capacitiesREQ,machinecapacities=read_file(r'Finalassignments\Task4\task4_2')
+
+Task=[]
+for i in range(m):
+    for j in range(n):
+        task=(i,j,costmatrix[i][j],capacitiesREQ[i][j])
+        Task.append(task)
+
+#Sort the tasks by cost and capacity requirement
+Task.sort(key=lambda x: (x[2], x[3]))
+
+
+def greedy_gap(Task):
+    #Initialize the assignment and machine loads
+    assignment = [-1] * n
+    machine_load = [0] * m
+    for task in Task:
+        machine,job,cost,req = task
+        if machine_load[machine] + req <= machinecapacities[machine] and assignment[job] == -1:
+            assignment[job] = machine
+            machine_load[machine] += req
+
+
+    return assignment
+    
+    
+assignment = greedy_gap(Task)
+print("Assignment of jobs to machines:", assignment)
+
+def calculate_cost(assignment, costmatrix):
+        total_cost = 0
+        for job in range(len(assignment)):
+            total_cost += costmatrix[assignment[job]][job]
+        return total_cost
+
+total_cost = calculate_cost(assignment, costmatrix)
+print("Total cost of the solution:", total_cost)
+
+def exhaustive_search(m, n, costmatrix, capacitiesREQ, machinecapacities):
+    best_cost = float('inf')
+    #Create a list of all possible solutions
+    All_solutions = list(it.product(range(m), repeat=n))
+    #Look for the best solution
+    for solution in All_solutions:
+        allowed=True
+        machine_load = [0] * m
+        #Calulate the load of each machine for a solution
+        for i in range(len(solution)):
+            #If it fits in the machine
+            if machine_load[solution[i]] + capacitiesREQ[solution[i]][i] <= machinecapacities[solution[i]]:
+                machine_load[solution[i]] += capacitiesREQ[solution[i]][i]
+            else:
+                allowed = False
+                break
+        if allowed:
+            current_cost = calculate_cost(solution, costmatrix)
+            if current_cost < best_cost and allowed:
+                best_cost = current_cost
+                best_assignment = list(solution)
+        
+    return best_assignment, best_cost
+
+# Example usage
+best_assignment, best_cost = exhaustive_search(m, n, costmatrix, capacitiesREQ, machinecapacities)
+print("Best assignment:", best_assignment)
+print("Best cost:", best_cost)
+
+
+    

@@ -1,0 +1,69 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+import queue as queue
+def read_file(filename):
+    arcs = []
+    with open(filename, 'r') as file:
+        noArcs = int(file.readline())
+        for line in range(noArcs):
+            from_node, dest_node = map(int, file.readline().split())
+            arcs.append((from_node, dest_node))
+    return arcs
+
+arcs=read_file('input')
+Nodes = []
+
+for arc in arcs:
+    for node in arc:
+        if node not in Nodes:
+            Nodes.append(node)
+#Has no incoming or outgoing subtasks(arcs)
+Nodes.append(7)
+Nodes.append(10)
+#print(arcs)
+
+#print(Nodes)
+G=nx.DiGraph()
+G.add_nodes_from(Nodes)
+G.add_edges_from(arcs)
+
+#print(G.nodes)
+#print(G.edges)
+nx.draw(G, with_labels=True, font_weight='bold', node_size=1000, node_color='skyblue', font_size=10, font_color='black', edge_color='black', width=1, edge_cmap=None, edge_vmin=None, edge_vmax=None, ax=None)
+plt.show()
+#Kahn's algorithm used in HW1
+def kahn_topological_sort(G):
+    # Step 1: Initialize the indegree dictionary
+    indegree = {node: 0 for node in G.nodes()}
+    for u, v in G.edges():
+        indegree[v] += 1
+
+    # Step 2: Initialize the queue with nodes having indegree 0
+    q = queue.Queue()
+    for node in G.nodes():
+        if indegree[node] == 0:
+            q.put(node)
+
+    # Step 3: Initialize the topological order list
+    topological_order = []
+
+    # Step 4: Process the queue
+    while not q.empty():
+        node = q.get()
+        topological_order.append(node)
+
+        for neighbor in G.neighbors(node):
+            indegree[neighbor] -= 1
+            if indegree[neighbor] == 0:
+                q.put(neighbor)
+
+    return topological_order
+
+topological_order = kahn_topological_sort(G)
+#To check if the network contains a cycle we check if all the nodes are inside the topological_order
+if(len(topological_order) == len(G.nodes)):
+    print("The network contains no cycle")
+else:
+    print("The network contains a cycle")
+
+print(topological_order)
